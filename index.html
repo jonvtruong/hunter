@@ -4,17 +4,17 @@
     <script src="jquery.min.js"></script>
     <script src="jquery.hotkeys.js"></script>
     <script src="Game.js"></script>
-    <script src="keys.js"></script>
+    <script src="eventListener.js"></script>
 </head>
 
 <body>
-<canvas id="world" width="405" height="720" style="border:1px solid #000000; margin:auto; display:block">
-    This browser can not run this game (canvas support missing).
-</canvas>
+    <canvas id="world" width="1400" height="700" style="border:1px solid #000000; margin:auto; display:block">
+        This browser can not run this game (canvas support missing).
+    </canvas>
+    <script type="text/javascript">
+        setupGame();
+    </script>
 
-<script type="text/javascript">
-    setupGame();
-</script>
 </body>
 
 </html>
