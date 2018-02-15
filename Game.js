@@ -60,47 +60,50 @@ class Component  {
 class Arrow extends Component{
     constructor (color, x, y, width, height, speed, dx, dy){
         super(color, x, y, width, height, speed);
-        //this.angle = angle;
+
         let sum = Math.abs(dx) + Math.abs(dy);
         this.xVel = speed * dx/sum/5;
         this.yVel = speed * dy/sum/5;
+        this.centerX = this.x + this.width/2;
+        this.centerY = this.x + this.height/2;
+        this.angle = Math.atan(this.yVel/this.xVel);
 
         console.log("velocity x,y " + this.xVel + ", " + this.yVel);
     }
 
     draw() {
         context.fillStyle = this.color;
-        context.strokeRect(this.x, this.y, this.width, this.height);
-    }
+ /*       this.x = this.centerX - this.width/2;
+        this.y = this.centerY - this.height/2;*/
 
-    get centerX(){
-        return this.x + this.width/2;
-    }
+        context.translate(this.centerX, this.centerY);
+        context.rotate(this.angle);
 
-    get centerY(){
-        return this.y + this.height/2;
-    }
+        context.strokeRect(-this.width/2, -this.height/2, this.width, this.height);
 
-    set centerX(v){
-        this.centerX = v;
-        this.x = v - this.width/2;
+        //reset the canvas to default
+        context.rotate(-this.angle);
+        context.translate(-this.centerX, -this.centerY);
     }
 
     move(direction){
-        this.x+=this.xVel;
-        this.y+=this.yVel;
-
+        this.centerX+=this.xVel;
+        this.centerY+=this.yVel;
+        this.angle = Math.atan(this.yVel/this.xVel);
         //apply gravity to y component
         this.yVel+=GRAVITY;
     }
 }
 
 function shootArrow(){
-    let dx = mouseX - player.x;
-    let dy = mouseY - player.y;
+    //arrow starts on the right side of player model, at middle height
+    let xOrigin = player.x + player.width;
+    let yOrigin = player.y + player.height/2;
+    let dx = mouseX - xOrigin;
+    let dy = mouseY - yOrigin;
 
     console.log("arrow shot dx,dy: " + dx + ", " + dy);
-    playerArrows.push(new Arrow("#F00",player.x,player.y,3,3,charge, dx, dy));
+    playerArrows.push(new Arrow("#F00",xOrigin,yOrigin,20,3,charge, dx, dy));
     
 }
 
@@ -131,7 +134,8 @@ function moveArrows(){
         playerArrows[i].move(1);
             console.log("arrow vx,y: " + playerArrows[i].xVel + ", " + playerArrows[i].yVel);
         if(playerArrows[i].x > canvas.width || playerArrows[i].y > groundY){
-            playerArrows.splice(i, 1);
+            playerArrows.splice(i);
+            i--;
         }
     }
 }
