@@ -1,14 +1,15 @@
 $(document).ready( function() {
     $("#world").mousedown(function () {
         console.log("mouse down");
-        mouse = true;
+        charging = true;
         $("#world").on("mousemove", function(e){getCoord(e)});
     });
 
     $("#world").mouseup(function (e) {
         console.log("mouse up");
-        mouse = false;
+        charging = false;
         $("#world").off("mousemove");
+        shootArrow();
     });
 
     $(document).bind("keyup","esc",function () {

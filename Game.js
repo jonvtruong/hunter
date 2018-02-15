@@ -1,18 +1,23 @@
 var pause=false;
 var canvas, context;
 var player;
-var playerHeight = 60;
-var groundHeight = 120;
+const playerHeight = 60;
+const groundHeight = 120;
+var groundY;
 var left, right;
 var playerBullets = [];
 var enemy;
 var timer = 0;
 var enemyHP;
+var charge = 0;
+var charging = false;
+var CHARGE_SPEED = 2;
+var mouseX, mouseY;
 
 function setupGame() {
     canvas = document.getElementById("world");
     context = canvas.getContext("2d");
-    var fps = 60;
+    const fps = 60;
     enemy = new Array(5);
     groundY = canvas.height - groundHeight;
 
@@ -20,7 +25,6 @@ function setupGame() {
     context.fillRect(0, groundY, canvas.width, groundHeight);
 
     player = new Component("#AAA",0,groundY-playerHeight,30,playerHeight,7);
-    enemyHP = 20;
 
     /* for (var i = 0; i < 5; i++){
         enemy[i]= new Component("#F0F",i*80+20,0,40,40);
@@ -30,29 +34,33 @@ function setupGame() {
     setInterval(function() {gameLoop();}, 1000/fps);
 }
 
-function Component (color, x, y, width, height, speed) {
-    this.color = color;
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.speed = speed;
+/** graphical object that can be drawn and moved */
 
-    this.draw = function() {
+class Component  {
+    constructor (color, x, y, width, height, speed){
+        this.color = color;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.speed = speed;
+    }
+
+    draw() {
         context.fillStyle = this.color;
         context.fillRect(this.x, this.y, this.width, this.height);
-        if(this.HP != null) {
-            context.fillText(this.HP, this.x, this.y);
-        }        
-    };
+    }
 
-    this.move = function(direction){
+    move(direction){
         this.x+=direction*this.speed;
-    };
+    }
+}
+
+function shootArrow(){
+    console.log("arrow shot");
 }
 
 function moveAll() {
-
     if (left) {
         if(player.x - player.speed < 0){
             player.x = 0;
@@ -91,12 +99,18 @@ function moveAll() {
 }
 
 function calculateAll(){
-   /*  if(timer%5==0) {
-        playerBullets.push(new Component("#0FA", player.x + player.width / 2 - 5, player.y - 30, 10, 10));
-        if(timer==200){
-            timer=0;
+    if(charging){
+        charge+=CHARGE_SPEED;
+        if(charge > 100){
+            charge = 100;
         }
-    } */
+
+        console.log("charging: " + charge);
+    }
+
+    else{
+        charge=0;
+    }
 
    /*  if(timer%100==0){
         var newRow = new Array(5);
@@ -149,8 +163,8 @@ function drawAll(){
 }
 
 function getCoord(e){
-    var mouseX = e.pageX - canvas.offsetLeft;
-    var mouseY = e.pageY - canvas.offsetTop;
+    mouseX = e.pageX - canvas.offsetLeft;
+    mouseY = e.pageY - canvas.offsetTop;
     console.log("mouse: " + mouseX + ", " + mouseY);
 }
 
