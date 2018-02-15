@@ -2,13 +2,13 @@ $(document).ready( function() {
     $("#world").mousedown(function () {
         console.log("mouse down");
         charging = true;
-        $("#world").on("mousemove", function(e){getCoord(e)});
+        $("#world").on("mousemove", function(e){setCoord(e)});
     });
 
     $("#world").mouseup(function (e) {
-        console.log("mouse up");
         charging = false;
         $("#world").off("mousemove");
+        setCoord(e);
         shootArrow();
     });
 

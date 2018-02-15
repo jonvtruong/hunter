@@ -3,9 +3,10 @@ var canvas, context;
 var player;
 const playerHeight = 60;
 const groundHeight = 120;
+const GRAVITY = 0.15;
 var groundY;
 var left, right;
-var playerBullets = [];
+var playerArrows = [];
 var enemy;
 var timer = 0;
 var enemyHP;
@@ -22,7 +23,7 @@ function setupGame() {
     groundY = canvas.height - groundHeight;
 
     context.fillStyle = "#638e51";
-    context.fillRect(0, groundY, canvas.width, groundHeight);
+  //  context.fillRect(0, groundY, canvas.width, groundHeight);
 
     player = new Component("#AAA",0,groundY-playerHeight,30,playerHeight,7);
 
@@ -56,11 +57,54 @@ class Component  {
     }
 }
 
-function shootArrow(){
-    console.log("arrow shot");
+class Arrow extends Component{
+    constructor (color, x, y, width, height, speed, dx, dy){
+        super(color, x, y, width, height, speed);
+        //this.angle = angle;
+        let sum = Math.abs(dx) + Math.abs(dy);
+        this.xVel = speed * dx/sum/5;
+        this.yVel = speed * dy/sum/5;
+
+        console.log("velocity x,y " + this.xVel + ", " + this.yVel);
+    }
+
+    draw() {
+        context.fillStyle = this.color;
+        context.strokeRect(this.x, this.y, this.width, this.height);
+    }
+
+    get centerX(){
+        return this.x + this.width/2;
+    }
+
+    get centerY(){
+        return this.y + this.height/2;
+    }
+
+    set centerX(v){
+        this.centerX = v;
+        this.x = v - this.width/2;
+    }
+
+    move(direction){
+        this.x+=this.xVel;
+        this.y+=this.yVel;
+
+        //apply gravity to y component
+        this.yVel+=GRAVITY;
+    }
 }
 
-function moveAll() {
+function shootArrow(){
+    let dx = mouseX - player.x;
+    let dy = mouseY - player.y;
+
+    console.log("arrow shot dx,dy: " + dx + ", " + dy);
+    playerArrows.push(new Arrow("#F00",player.x,player.y,3,3,charge, dx, dy));
+    
+}
+
+function movePlayer(){
     if (left) {
         if(player.x - player.speed < 0){
             player.x = 0;
@@ -80,22 +124,16 @@ function moveAll() {
             player.move(1);
         }
     }
-   /*  playerBullets.forEach(function (bullet) {
-        if (bullet.y > 0) {
-            bullet.move(0, -20);
-        }
+}
 
-        else {
-            var index = playerBullets.indexOf(bullet);
-            if (index > -1) {
-                playerBullets.splice(index, 1);
-            }
+function moveArrows(){
+    for (let i = 0; i<playerArrows.length; i++){
+        playerArrows[i].move(1);
+            console.log("arrow vx,y: " + playerArrows[i].xVel + ", " + playerArrows[i].yVel);
+        if(playerArrows[i].x > canvas.width || playerArrows[i].y > groundY){
+            playerArrows.splice(i, 1);
         }
-    });
-
-    for (var i = 0; i < enemy.length; i++) {
-        enemy[i].move(0, 1);
-    } */
+    }
 }
 
 function calculateAll(){
@@ -148,21 +186,26 @@ function checkCollide(Rect1, Rect2){
     ((Rect1.x+Rect1.width) < Rect2.x) )
 }
 
+function moveAll() {
+    movePlayer();
+    moveArrows();
+}
+
 function drawAll(){
     context.clearRect(0, 0, canvas.width, groundY);
 
-    /* playerBullets.forEach(function(bullet){
-        bullet.draw();
-    }); */
+    playerArrows.forEach(function(arrow){
+        arrow.draw();
+    }); 
 
-    player.draw();
+    //player.draw();
 
    /*  for (var i = 0; i < enemy[j].length; i++) {
         enemy[i].draw();
     } */
 }
-
-function getCoord(e){
+/* gets the coordinates of the mouse relative to canvas origin */
+function setCoord(e){
     mouseX = e.pageX - canvas.offsetLeft;
     mouseY = e.pageY - canvas.offsetTop;
     console.log("mouse: " + mouseX + ", " + mouseY);
