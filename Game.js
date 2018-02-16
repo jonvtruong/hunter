@@ -3,30 +3,31 @@ var canvas, context;
 var player;
 const playerHeight = 60;
 const groundHeight = 120;
+const CHARGE_WIDTH = 500;
+const CHARGE_HEIGHT = 40;
 const GRAVITY = 0.15;
 var groundY;
 var left, right;
 var playerArrows = [];
-var enemy;
+var enemy = [];
 var timer = 0;
 var enemyHP;
 var charge = 0;
 var charging = false;
-var CHARGE_SPEED = 2;
+var CHARGE_SPEED = 1;
 var mouseX, mouseY;
 
 function setupGame() {
     canvas = document.getElementById("world");
     context = canvas.getContext("2d");
     const fps = 60;
-    enemy = new Array(5);
     groundY = canvas.height - groundHeight;
 
-    context.fillStyle = "#638e51";
-  //  context.fillRect(0, groundY, canvas.width, groundHeight);
+    drawGround();
+    drawChargeBar();
 
     player = new Component("#AAA",0,groundY-playerHeight,30,playerHeight,7);
-
+  
     /* for (var i = 0; i < 5; i++){
         enemy[i]= new Component("#F0F",i*80+20,0,40,40);
         enemy[i].HP=enemyHP;
@@ -37,6 +38,19 @@ function setupGame() {
 
 /** graphical object that can be drawn and moved */
 
+function drawGround(){
+    context.fillStyle = "#638e51";
+    context.fillRect(0, groundY, canvas.width, groundHeight);
+}
+
+function drawChargeBar(){
+    context.lineWidth = "6";
+    context.strokeStyle = "#000";
+    context.fillStyle = "#00F";
+    context.fillRect(CHARGE_WIDTH/4, canvas.height-2*CHARGE_HEIGHT, CHARGE_WIDTH*charge/100, CHARGE_HEIGHT);
+    context.strokeRect(CHARGE_WIDTH/4, canvas.height-2*CHARGE_HEIGHT, CHARGE_WIDTH, CHARGE_HEIGHT);
+}
+
 class Component  {
     constructor (color, x, y, width, height, speed){
         this.color = color;
@@ -44,6 +58,8 @@ class Component  {
         this.y = y;
         this.width = width;
         this.height = height;
+        this.centerX = this.x + this.width/2;
+        this.centerY = this.y + this.height/2;
         this.speed = speed;
     }
 
@@ -62,10 +78,9 @@ class Arrow extends Component{
         super(color, x, y, width, height, speed);
 
         let sum = Math.abs(dx) + Math.abs(dy);
-        this.xVel = speed * dx/sum/5;
-        this.yVel = speed * dy/sum/5;
-        this.centerX = this.x + this.width/2;
-        this.centerY = this.x + this.height/2;
+        this.xVel = speed * dx/sum/3;
+        this.yVel = speed * dy/sum/3;
+        
         this.angle = Math.atan(this.yVel/this.xVel);
 
         console.log("velocity x,y " + this.xVel + ", " + this.yVel);
@@ -73,6 +88,7 @@ class Arrow extends Component{
 
     draw() {
         context.fillStyle = this.color;
+        context.lineWidth = "1";
  /*       this.x = this.centerX - this.width/2;
         this.y = this.centerY - this.height/2;*/
 
@@ -104,7 +120,7 @@ function shootArrow(){
 
     console.log("arrow shot dx,dy: " + dx + ", " + dy);
     playerArrows.push(new Arrow("#F00",xOrigin,yOrigin,20,3,charge, dx, dy));
-    
+    charge = 0;    
 }
 
 function movePlayer(){
@@ -129,13 +145,32 @@ function movePlayer(){
     }
 }
 
+function moveEnemies(){
+    for (let i = 0; i<enemy.length; i++){
+        if(enemy[i].x<0){
+            enemy.splice(i,1);
+            i--;
+        }
+
+        else{
+            enemy[i].move(-1);
+        }
+    }
+}
+
 function moveArrows(){
     for (let i = 0; i<playerArrows.length; i++){
-        playerArrows[i].move(1);
-            console.log("arrow vx,y: " + playerArrows[i].xVel + ", " + playerArrows[i].yVel);
-        if(playerArrows[i].x > canvas.width || playerArrows[i].y > groundY){
-            playerArrows.splice(i);
+        //console.log("arrow x,y: " + playerArrows[i].x + ", " + playerArrows[i].y);
+
+        //if the arrow goes out of bounds, remove it from the array
+        if(playerArrows[i].centerX > canvas.width || playerArrows[i].centerY > groundY){
+            playerArrows.splice(i,1);
             i--;
+            drawGround();
+        }
+
+        else{
+            playerArrows[i].move(1);
         }
     }
 }
@@ -154,56 +189,72 @@ function calculateAll(){
         charge=0;
     }
 
-   /*  if(timer%100==0){
-        var newRow = new Array(5);
-        for (var i = 0; i<newRow.length; i++){
-            newRow[i]= new Component("#F0F",i*80+20,0,40,40);
-            newRow[i].HP=enemyHP;
-        }
-
-        enemy.push(newRow);
+    if(timer%1000==0){
+        enemy.push(new Component("#F0F",canvas.width, groundY-100,100,100,0.5));
     }
- */
 
-   /*  playerBullets.forEach(function(bullet){
-        for (var i = 0; i < enemy.length; i++) {
-            if (checkCollide(bullet, enemy[i])) {
-                var bulletIndex = playerBullets.indexOf(bullet);
-                if (bulletIndex > -1) {
-                    playerBullets.splice(bulletIndex, 1);
-                }
-                enemy[i].HP-=10;
+    if(timer == 10000){
+        timer =0;
+    }
 
-                if(enemy[i].HP<=0){
-                    enemy.splice(i,1);
-                }
+    //check collisions of arrow vs enemy
+    for (let j = 0; j<enemy.length; j++){
+        for (let i = 0; i<playerArrows.length; i++){
+            //if the arrow hits an enemy remove it from the array
+            if(checkCollide(playerArrows[i],enemy[j])){
+                enemy[j].color = getRandomColor();
+                playerArrows.splice(i,1);
+                i--;
             }
         }
-    }); */
+    }
 }
 
-function checkCollide(Rect1, Rect2){
-    return !(
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+function checkCollide(arrow, enemy){
+    if((arrow.centerX < (enemy.x + enemy.width)) && (arrow.centerX > enemy.x) && 
+        (arrow.centerY < (enemy.y+enemy.height)) && (arrow.centerY > enemy.y)){
+        return true;
+    }
+
+    else{return false;}
+
+   /* return !(
         ((Rect1.y+Rect1.height) < Rect2.y) ||
     (Rect1.y > (Rect2.y+Rect2.height)) ||
     (Rect1.x > (Rect2.x+Rect2.width)) ||
-    ((Rect1.x+Rect1.width) < Rect2.x) )
+    ((Rect1.x+Rect1.width) < Rect2.x) )*/
 }
 
 function moveAll() {
     movePlayer();
     moveArrows();
+    moveEnemies();
 }
 
 function drawAll(){
-    context.clearRect(0, 0, canvas.width, groundY);
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
     playerArrows.forEach(function(arrow){
         arrow.draw();
     }); 
 
-    //player.draw();
+    player.draw();
 
+    enemy.forEach(function(e){
+        e.draw();
+    }); 
+
+    drawGround();
+    drawChargeBar();
    /*  for (var i = 0; i < enemy[j].length; i++) {
         enemy[i].draw();
     } */
